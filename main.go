@@ -1,11 +1,51 @@
 package main
 
-import(
+import (
 	"fmt"
 	"log"
 	"net/http"
 )
 
-func main(){
-	
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hello" {
+		http.Error(w, "404 not found", http.StatusNotFound)
+		return
+	}
+
+	if r.Method != "GET" {
+		http.Error(w, "Method is not supported", http.StatusNotFound)
+		return
+	}
+
+	fmt.Fprintf(w, "Hey there!")
+}
+
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseFrom() err: %v", err)
+		return
+	}
+	fmt.Fprintf(w, "POST request was successful\n")
+
+	name := r.FormValue("name")
+	phone := r.FormValue("phone")
+	email := r.FormValue("email")
+
+	fmt.Fprintf(w, "Name: %s\n", name)
+	fmt.Fprintf(w, "Phone: %s\n", phone)
+	fmt.Fprintf(w, "Email: %s\n", email)
+}
+
+func main() {
+	fileServer := http.FileServer(http.Dir("./static"))
+
+	http.Handle("/", fileServer)
+	http.HandleFunc("/form", formHandler)
+	http.HandleFunc("/hello", helloHandler)
+
+	fmt.Printf("Starting a local server at port 8080\n")
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
 }
